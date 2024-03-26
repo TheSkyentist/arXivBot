@@ -1,0 +1,8 @@
+name: chromedriver
+channels:
+- conda-forge
+dependencies:
+- python
+- pyyaml
+- selenium
+
