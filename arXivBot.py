@@ -60,4 +60,4 @@ while datetime.now().hour != params['hour']:
 
 # Click the submit button
 submitBtn.click()
-print(f'Submitting! {datetime.datetime.now()}')
+print(f'Submitting! {datetime.now()}')
