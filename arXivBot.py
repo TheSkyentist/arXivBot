@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 # Import Packages
-import os
 import time
 import yaml
 import argparse
