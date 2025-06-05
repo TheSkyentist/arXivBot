@@ -1,5 +1,4 @@
-hour: 20 # Hour at which time will be 14:00 Eastern Time (integer)
+hour: 20 # Hour at which time will be 14:00 Eastern Time local time (integer)
 username: username # arXiv username
 password: password # arXiv password
-paperlink: https://arxiv.org/submit/XXXXXX/preview # arXiv paper link
-chromedriver: /opt/homebrew/bin/chromedriver # path to Chromedriver
+identifier: XXXXXX # arXiv paper identifier (don't include submit/)

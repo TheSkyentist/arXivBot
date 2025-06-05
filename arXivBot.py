@@ -1,14 +1,15 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
-# Import Packages
+# Packages
 import time
 import yaml
+import requests
 import argparse
 from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as ec
+from urllib.parse import urljoin
+
+# arXiv base URL
+base_url = 'https://arxiv.org'
 
 # Parse arguments
 parser = argparse.ArgumentParser()
@@ -21,43 +22,43 @@ args = parser.parse_args()
 with open(args.params) as f:
     params = yaml.safe_load(f)
 
-# Use the installed chromedriver to automate chrome
-# IF THIS LINE DOESN'T RUN, CHROMEDRIVER and CHROME VERSIONS ARE MISMATCHED
-service = webdriver.ChromeService(executable_path=params['chromedriver'])
-driver = webdriver.Chrome(service=service)
+# Create session
+session = requests.Session()
 
-# Open the webpage in Google Chrome
-driver.get(params['paperlink'])
+# Login to arXiv
+print('Logging in...')
+login_url = urljoin(base_url, 'login')
+login_data = {
+    'username': params['username'],
+    'password': params['password'],
+    'next_page': params.get('redirect_after_login', 'https://arxiv.org/user'),
+}
+response = session.post(login_url, data=login_data)
 
-# Fill in email and password
-emailField = WebDriverWait(driver, 20).until(
-    ec.presence_of_element_located((By.ID, 'username'))
-)
-emailField.send_keys(params['username'])
+# Verify login
+if 'logout' not in response.text.lower():
+    raise Exception('Login failed - check credentials')
+print('Login successful')
 
-pwField = WebDriverWait(driver, 20).until(
-    ec.presence_of_element_located((By.ID, 'password'))
-)
-pwField.send_keys(params['password'])
+# Make relevant URLs
+paper_url = base_url
+for part in ['submit', params['identifier']]:
+    paper_url = urljoin(paper_url, f'{part}/')
+preview_url = urljoin(paper_url, 'preview')
+submission_url = urljoin(paper_url, 'submit')
 
-# Click sign in button
-driver.find_element(
-    'xpath', '/html/body/main/content/div/div/form/fieldset/div[3]/div/input'
-).click()
+# Test that we can access the submission page
+response = session.get(preview_url)
+if response.status_code != 200:
+    raise Exception(
+        f'Failed to access submission page ({preview_url}): {response.status_code}'
+    )
+print('Access to submission page confirmed')
 
-# Wait for webpage to load
-time.sleep(10)
-
-# Find the submit button
-submitBtn = driver.find_element(
-    'xpath', '/html/body/div[3]/div[3]/div[2]/div[3]/form/input'
-)
-
-# Wait for hour to be correct
+# Wait for correct hour
+print(f'Waiting until hour {params["hour"]}...')
 while datetime.now().hour != params['hour']:
+    time.sleep(0.01)
 
-    time.sleep(0.01) # Approximately minimum time we can go without being inaccurate due to OS timekeeping
-
-# Click the submit button
-submitBtn.click()
-print(f'Submitting! {datetime.now()}')
+response = session.post(submission_url, data={'Submit': 'Submit'})
+print('Submission response:', response.status_code)

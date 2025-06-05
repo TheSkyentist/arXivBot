@@ -1,13 +1,23 @@
 [workspace]
 authors = ["TheSkyentist <raphael.hviding@gmail.com>"]
 channels = ["conda-forge"]
-name = "chromedriver"
+name = "arXivBot"
 platforms = ["osx-arm64"]
 version = "0.1.0"
 
 [tasks]
+submit = "python arXivBot.py"
 
 [dependencies]
-python = ">=3.13.3,<3.14"
+requests = ">=2.32.3,<3"
+ipython = ">=9.3.0,<10"
 pyyaml = ">=6.0.2,<7"
-selenium = ">=4.33.0,<5"
+
+[feature.rust.dependencies]
+rust = ">=1.87.0,<1.88"
+
+[feature.rust.tasks]
+build = "cargo build --release"
+
+[environments]
+rust = ["rust"]
