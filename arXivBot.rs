@@ -11,6 +11,9 @@ use serde::Deserialize;
 use serde_yaml;
 use clap::Parser;
 
+const BASE_URL: &str = "https://arxiv.org";
+const TARGET_HOUR: u32 = 14; // 14:00 (2:00 PM) Eastern Time
+
 #[derive(Parser)]
 struct Args {
     #[clap(short, long, default_value = "params.yaml")]
@@ -47,9 +50,12 @@ fn main() {
 
     // Login to arXiv
     println!("Logging in...");
-    let base_url = "https://arxiv.org";
-    let login_url = Url::parse(&format!("{}/login", base_url)).unwrap();
-    let next_page = params.redirect_after_login.clone().unwrap_or_else(|| "https://arxiv.org/user".to_string());
+    let login_url = Url::parse(&format!("{}/login", BASE_URL)).unwrap();
+    let next_page = params
+        .redirect_after_login
+        .clone()
+        .unwrap_or_else(|| format!("{}/user", BASE_URL));
+
     let mut login_data = std::collections::HashMap::new();
     login_data.insert("username", params.username.as_str());
     login_data.insert("password", params.password.as_str());
@@ -67,8 +73,8 @@ fn main() {
     }
     println!("Login successful");
 
-    // Make relevant URLs
-    let mut paper_url = Url::parse(base_url).unwrap();
+    // Construct submission URLs
+    let mut paper_url = Url::parse(BASE_URL).unwrap();
     paper_url = paper_url.join("submit/").unwrap();
     paper_url = paper_url.join(&format!("{}/", params.identifier)).unwrap();
     let preview_url = paper_url.join("preview").unwrap();
@@ -84,26 +90,24 @@ fn main() {
         process::exit(1);
     }
     println!("Access to submission page confirmed");
-    
-    // Get current time in ET
+
+    // Get current time in Eastern Time
     let now_et = Eastern.from_utc_datetime(&Local::now().naive_utc());
 
-    // Build 14:00 ET today
-    let today_14_et = Eastern
-        .with_ymd_and_hms(now_et.year(), now_et.month(), now_et.day(), 14, 0, 0)
-        .unwrap();  // unwrap is safe since 14:00 is always valid
+    // Build target time today at TARGET_HOUR ET
+    let today_target_et = Eastern
+        .with_ymd_and_hms(now_et.year(), now_et.month(), now_et.day(), TARGET_HOUR, 0, 0)
+        .unwrap();
 
-    // Determine if we need to schedule for tomorrow
-    let target_et = if now_et >= today_14_et {
-        today_14_et + Duration::days(1)
+    // Determine if we need to wait until tomorrow
+    let target_et = if now_et >= today_target_et {
+        today_target_et + Duration::days(1)
     } else {
-        today_14_et
+        today_target_et
     };
 
-    // Convert target ET time to local time
+    // Convert to local time for waiting
     let target_local = target_et.with_timezone(&Local);
-
-    // Print waiting message
     println!(
         "Waiting until {} to submit...",
         target_local.format("%Y-%m-%d %H:%M:%S")
@@ -111,7 +115,6 @@ fn main() {
 
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        // Tight spin loop with yield
         while Local::now() < target_local {
             tokio::task::yield_now().await;
         }
@@ -119,11 +122,12 @@ fn main() {
 
     let mut submit_data = std::collections::HashMap::new();
     submit_data.insert("Submit", "Submit");
+
     let response = client.post(submission_url)
         .form(&submit_data)
         .send()
         .unwrap();
+
     println!("Submission response: {}", response.status());
     println!("Submission sent at: {}", Local::now().format("%Y-%m-%d %H:%M:%S%.6f"));
-
 }
