@@ -1,4 +1,3 @@
-hour: 20 # Hour at which time will be 14:00 Eastern Time local time (integer)
 username: username # arXiv username
 password: password # arXiv password
 identifier: XXXXXX # arXiv paper identifier (don't include submit/)

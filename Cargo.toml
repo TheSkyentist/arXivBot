@@ -1,0 +1,19 @@
+[package]
+name = "arxivbot"
+version = "0.1.0"
+edition = "2024"
+authors = ["TheSkyentist <raphael.hviding@gmail.com>"]
+
+[dependencies]
+chrono = { version = "0.4.41", features = ["clock"] }
+chrono-tz = "0.10.3"
+clap = { version = "4.5.39", features = ["derive"] }
+reqwest = { version = "0.12.19", features = ["blocking", "cookies", "json"] }
+select = "0.6.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_yaml = "0.9.34"
+tokio = { version = "1.45.1", features = ["macros", "rt", "rt-multi-thread", "time"] }
+
+[[bin]]
+name = "arXivBot"
+path = "arXivBot.rs"
