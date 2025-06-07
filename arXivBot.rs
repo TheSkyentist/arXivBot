@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::Read;
 use std::process;
+use std::hint::spin_loop;
 
 use chrono::{Datelike, Duration, Local, TimeZone};
 use chrono_tz::US::Eastern;
@@ -115,9 +116,20 @@ fn main() {
 
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        while Local::now() < target_local {
-            tokio::task::yield_now().await;
-        }
+        use tokio::time::{sleep_until, Instant, Duration};
+
+    let now = chrono::Local::now();
+    let duration_until = (target_local - now).to_std().expect("Target time must be in the future");
+    let target_instant = Instant::now() + duration_until;
+    let spin_start = target_instant - Duration::from_secs(5);
+
+    if Instant::now() < spin_start {
+        sleep_until(spin_start).await;
+    }
+
+    while Instant::now() < target_instant {
+        spin_loop();
+    }
     });
 
     let mut submit_data = std::collections::HashMap::new();
