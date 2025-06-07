@@ -121,7 +121,7 @@ fn main() {
     let now = chrono::Local::now();
     let duration_until = (target_local - now).to_std().expect("Target time must be in the future");
     let target_instant = Instant::now() + duration_until;
-    let spin_start = target_instant - Duration::from_secs(5);
+    let spin_start = target_instant - Duration::from_secs(1);
 
     if Instant::now() < spin_start {
         sleep_until(spin_start).await;
