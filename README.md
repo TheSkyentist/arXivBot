@@ -72,7 +72,3 @@ The Rust version is faster but requires compilation.
 ## Security Note
 
 Your arXiv password is stored in plain text in params.yaml. Do not share this file and consider deleting it after use.
-
----
-
-Let me know if you want this inserted into your README.md.
